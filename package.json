@@ -1,0 +1,20 @@
+{
+  "name": "gmgncontest-wallet-resolver",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Read-only resolver for GMGN S12 BSC masked wallets using Four.Meme on-chain events.",
+  "scripts": {
+    "scan": "node src/cli.js scan",
+    "watch": "node src/cli.js watch",
+    "service": "node src/service.js",
+    "intel": "node src/intel-service.js",
+    "enrich": "node src/wallet-enrichment-service.js",
+    "browser-sync": "node src/browser-sync.js",
+    "dashboard": "node src/dashboard-server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

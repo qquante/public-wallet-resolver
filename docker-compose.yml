@@ -1,0 +1,126 @@
+services:
+  gmgn-contest-resolver:
+    build: .
+    container_name: gmgn-contest-resolver
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://host.docker.internal:6380/0}
+      OUT_DIR: /app/data
+      GMGN_FILE: ${GMGN_FILE:-/app/data/gmgn-ranking-current.network-response}
+      GMGN_RANKING_URL: ${GMGN_RANKING_URL:-}
+      GMGN_COOKIE: ${GMGN_COOKIE:-}
+      MAX_RANK: ${MAX_RANK:-20}
+      GMGN_LIMIT: ${GMGN_LIMIT:-30}
+      POLL_INTERVAL_MS: ${POLL_INTERVAL_MS:-15000}
+      RANKING_INTERVAL_MS: ${RANKING_INTERVAL_MS:-300000}
+      CHUNK_SIZE: ${CHUNK_SIZE:-250}
+      MIN_CHUNK_SIZE: ${MIN_CHUNK_SIZE:-25}
+      INCLUDE_TX_SENDERS: ${INCLUDE_TX_SENDERS:-1}
+      GMGN_ROUTER_TX_SCAN: ${GMGN_ROUTER_TX_SCAN:-1}
+      GMGN_ROUTER_TX_CONCURRENCY: ${GMGN_ROUTER_TX_CONCURRENCY:-28}
+      GMGN_ROUTER_TX_RPC_POOL_SIZE: ${GMGN_ROUTER_TX_RPC_POOL_SIZE:-7}
+      GMGN_ROUTER_TX_PROGRESS_EVERY: ${GMGN_ROUTER_TX_PROGRESS_EVERY:-1000}
+      GMGN_ROUTER_CONTRACTS: ${GMGN_ROUTER_CONTRACTS:-0x1de460f363af910f51726def188f9004276bf4bc}
+      GMGN_ROUTER_SELECTORS: ${GMGN_ROUTER_SELECTORS:-0x4d819a2a}
+      BSC_RPC_WS: ${BSC_RPC_WS:-}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  gmgn-browser-sync:
+    build: .
+    container_name: gmgn-browser-sync
+    command: ["npm", "run", "browser-sync"]
+    environment:
+      OUT_DIR: /app/data
+      CHROME_CDP_URL: ${CHROME_CDP_URL:-http://host.docker.internal:9222}
+      GMGN_GROUP_ID: ${GMGN_GROUP_ID:-}
+      GMGN_CHAIN: ${GMGN_CHAIN:-bsc}
+      MAX_RANK: ${MAX_RANK:-20}
+      GMGN_LIMIT: ${GMGN_LIMIT:-30}
+      GMGN_FETCH_RANKING: ${GMGN_FETCH_RANKING:-1}
+      GMGN_RANKING_FILE: ${GMGN_RANKING_FILE:-/app/data/gmgn-ranking-current.network-response}
+      BROWSER_SYNC_INTERVAL_MS: ${BROWSER_SYNC_INTERVAL_MS:-300000}
+      GMGN_SYNC_BATCH_SIZE: ${GMGN_SYNC_BATCH_SIZE:-200}
+      GMGN_SYNC_DELAY_MS: ${GMGN_SYNC_DELAY_MS:-500}
+      GMGN_RELOAD_AFTER_SYNC: ${GMGN_RELOAD_AFTER_SYNC:-0}
+      SYNC_REMOVE: ${SYNC_REMOVE:-1}
+      DRY_RUN: ${DRY_RUN:-0}
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - gmgn-contest-resolver
+    restart: unless-stopped
+
+  gmgn-dashboard:
+    build: .
+    container_name: gmgn-dashboard
+    command: ["npm", "run", "dashboard"]
+    environment:
+      OUT_DIR: /app/data
+      DASHBOARD_PORT: ${DASHBOARD_PORT:-8788}
+    ports:
+      - "${DASHBOARD_PORT:-8788}:${DASHBOARD_PORT:-8788}"
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - gmgn-contest-resolver
+    restart: unless-stopped
+
+  gmgn-contest-intel:
+    build: .
+    container_name: gmgn-contest-intel
+    command: ["npm", "run", "intel"]
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://host.docker.internal:6380/0}
+      OUT_DIR: /app/data
+      WALLETS_FILE: /app/data/wallets.json
+      MAX_RANK: ${MAX_RANK:-20}
+      INTEL_FROM_BLOCK: ${INTEL_FROM_BLOCK:-108512217}
+      INTEL_POLL_INTERVAL_MS: ${INTEL_POLL_INTERVAL_MS:-15000}
+      INTEL_WINDOW_SIZE: ${INTEL_WINDOW_SIZE:-300}
+      INTEL_CHUNK_SIZE: ${INTEL_CHUNK_SIZE:-1000}
+      INTEL_MIN_CHUNK_SIZE: ${INTEL_MIN_CHUNK_SIZE:-25}
+      INTEL_OUTPUT_LIMIT: ${INTEL_OUTPUT_LIMIT:-10000}
+      INTEL_LIVE_WS: ${INTEL_LIVE_WS:-1}
+      INTEL_LIVE_TIMEOUT_MS: ${INTEL_LIVE_TIMEOUT_MS:-15000}
+      INTEL_ROUTER_SCAN: ${INTEL_ROUTER_SCAN:-1}
+      INTEL_ROUTER_FROM_BLOCK: ${INTEL_ROUTER_FROM_BLOCK:-108512217}
+      INTEL_ROUTER_CHUNK_BLOCKS: ${INTEL_ROUTER_CHUNK_BLOCKS:-1000}
+      INTEL_ROUTER_CONCURRENCY: ${INTEL_ROUTER_CONCURRENCY:-28}
+      INTEL_ROUTER_RPC_POOL_SIZE: ${INTEL_ROUTER_RPC_POOL_SIZE:-7}
+      INTEL_ROUTER_OUTPUT_EVERY_CHUNKS: ${INTEL_ROUTER_OUTPUT_EVERY_CHUNKS:-5}
+      GMGN_ROUTER_CONTRACTS: ${GMGN_ROUTER_CONTRACTS:-0x1de460f363af910f51726def188f9004276bf4bc}
+      GMGN_ROUTER_SELECTORS: ${GMGN_ROUTER_SELECTORS:-0x4d819a2a}
+      BSC_RPC_WS: ${BSC_RPC_WS:-}
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - gmgn-contest-resolver
+    restart: unless-stopped
+
+  gmgn-wallet-enrich:
+    build: .
+    container_name: gmgn-wallet-enrich
+    command: ["npm", "run", "enrich"]
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://host.docker.internal:6380/0}
+      OUT_DIR: /app/data
+      LINKED_WALLETS_FILE: /app/data/linked-wallets.json
+      CHROME_CDP_URL: ${CHROME_CDP_URL:-http://host.docker.internal:9222}
+      GMGN_CHAIN: ${GMGN_CHAIN:-bsc}
+      MIN_BNB_BALANCE: ${MIN_BNB_BALANCE:-2}
+      ENRICH_INTERVAL_MS: ${ENRICH_INTERVAL_MS:-300000}
+      BALANCE_CACHE_TTL_MS: ${BALANCE_CACHE_TTL_MS:-60000}
+      BALANCE_RPC_CONCURRENCY: ${BALANCE_RPC_CONCURRENCY:-25}
+      GMGN_ENRICH_CACHE_TTL_MS: ${GMGN_ENRICH_CACHE_TTL_MS:-3600000}
+      GMGN_ENRICH_ERROR_RETRY_MS: ${GMGN_ENRICH_ERROR_RETRY_MS:-300000}
+      GMGN_ENRICH_MAX_ENDPOINTS_PER_CYCLE: ${GMGN_ENRICH_MAX_ENDPOINTS_PER_CYCLE:-300}
+      GMGN_ENRICH_CDP_BATCH_SIZE: ${GMGN_ENRICH_CDP_BATCH_SIZE:-60}
+      GMGN_ENRICH_REQUEST_DELAY_MS: ${GMGN_ENRICH_REQUEST_DELAY_MS:-150}
+      GMGN_ENRICH_ACTIVITY_LIMIT: ${GMGN_ENRICH_ACTIVITY_LIMIT:-50}
+      BSC_RPC_WS: ${BSC_RPC_WS:-}
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - gmgn-contest-intel
+    restart: unless-stopped
