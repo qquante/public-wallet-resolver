@@ -1,76 +1,40 @@
 # Public Wallet Resolver
 
-**Resolve masked ranking entries while preserving evidence and ambiguity.**
-
 ![Language: JavaScript](https://img.shields.io/badge/Language-JavaScript-F7DF1E?style=flat-square&logo=javascript) ![Store: SQLite](https://img.shields.io/badge/Store-SQLite-555555?style=flat-square) [![License: MIT](https://img.shields.io/badge/License-MIT-555555?style=flat-square)](LICENSE)
 
-[Overview](#overview) · [Quickstart](#quickstart) · [Example](#example) · [Validation](#validation) · [Documentation](#documentation)
+Resolve masked BSC ranking addresses against public Four.Meme and transaction evidence, while retaining ambiguous and unresolved matches.
 
-## Overview
+The core resolver compares a ranking mask with candidate addresses from account events, router transactions and transaction senders. It returns both the chosen source and candidate sets instead of silently selecting the first address that happens to match.
 
-A read-only BSC analysis toolkit for resolving masked ranking entries against public transaction evidence.
+## Three outcomes worth keeping separate
 
-**Stack:** JavaScript · Node.js 24 · SQLite · JSON-RPC · Redis protocol adapter · local dashboard
-
-## Matching has more than one outcome
-
-| Component | Behavior |
+| Outcome | What the source does |
 | --- | --- |
-| Resolved | Candidate evidence supports a matching address under the implemented rules. |
-| Ambiguous | Multiple candidates remain and need further evidence. |
-| Unresolved | Available input is insufficient for a match. |
+| One candidate | Resolves the wallet and identifies the supporting observation source. |
+| Several candidates | Returns `ambiguous` with candidates for review. |
+| No candidate | Retains `not_found_on_fourmeme_window`; absence is bounded by the scanned window. |
 
-## Processing path
+Creator matches are retained separately and do not automatically become the resolved trading wallet. See [resolve.js](src/resolve.js).
 
-```mermaid
-flowchart LR
-  N0["Ranking input"]
-  N1["candidate matching"]
-  N2["public-chain evidence"]
-  N3["confidence/ambiguity state"]
-  N4["SQLite/dashboard"]
-N0 --> N1 --> N2 --> N3 --> N4
-```
-
-## Quickstart
+## Run the resolver fixture tests
 
 ```console
-node --test test/amounts.test.js test/dashboard-data.test.js test/decoder.test.js test/intel-db.test.js test/rank-history.test.js test/resolve.test.js test/router-purchases.test.js test/sync-data.test.js test/wallet-enrichment-db.test.js
+node --test test/resolve.test.js
 ```
 
-The commands above install prerequisites or run the specified offline checks. Live collection, cloud operations, messaging and trading are separate operational steps when present.
+Node.js 24+ is required. The broader `npm test` suite also covers amount handling, decoders, ranking history, enrichment storage and dashboard data.
 
-## Example
+## Collection is a separate layer
 
-**Inspect the workflow**
-
-Inspect resolver fixtures for masked-address matching and ambiguity. Router/event observations contribute public evidence; SQLite retains enrichment and history for the dashboard. Report the match state and its evidence rather than converting a ranking correlation into personal identity.
-
-## Configuration and storage
-
-Node.js 24+, SQLite and JSON-RPC readers. Live scans need supplied ranking input and local RPC configuration. Redis-protocol output and browser synchronization have separate integration paths.
-
-## Repository guide
-
-| Location | Responsibility |
+| Command | Role |
 | --- | --- |
-| [src/cli.js](src/cli.js) | Research CLI |
-| [src/resolve.js](src/resolve.js) | Address resolution |
-| [src/dashboard-data.js](src/dashboard-data.js) | Dashboard projection |
-| [test](test) | Offline regression cases |
+| `npm run scan` / `npm run watch` | Collect public-chain observations for resolution. |
+| `npm run service` / `npm run intel` | Run ongoing source/intelligence services. |
+| `npm run enrich` | Extend wallet observations. |
+| `npm run dashboard` | Serve the local presentation layer. |
 
-## Validation
+The source includes SQLite state, Redis messaging and browser/CDP synchronization adapters. These operational paths need their own inputs and authorized browser/account context; they are not exercised by the resolver fixture test. A mask correlation is not proof of a person's identity or wallet ownership.
 
-These checks use offline fixtures or controlled backends.
+**Technology:** JavaScript · Node.js 24 · SQLite · JSON-RPC · Redis protocol adapter · local dashboard
 
-## Scope and operational boundaries
-
-Wallet/address correlation does not prove who controls an account. Browser synchronization mutates external browser state and is distinct from read-only chain analysis. Fixtures do not establish current provider coverage.
-
-## Documentation
-
-- The repository guide above links directly to the implementation and configuration files.
-
-## License and attribution
-
-Project-authored source code is licensed under the [MIT License](LICENSE). Third-party components and datasets retain their respective rights and licenses.
+Project-authored source: [MIT](LICENSE). Third-party components retain their own notices and terms.
